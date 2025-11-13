@@ -9,3 +9,5 @@ Following tutorial on [this page](https://docs.aws.amazon.com/iot/latest/develop
   - Create AWS IoT resources, which includes creating an IoT policy and "a thing object", [ref](https://docs.aws.amazon.com/iot/latest/developerguide/create-iot-resources.html)
  
 # Nov 2 - Nov 12 Running Greengrass on Docker
+
+## Nov 13 - Exploration with different programming codes
