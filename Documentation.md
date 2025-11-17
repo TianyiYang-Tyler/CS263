@@ -15,5 +15,6 @@ Following tutorial on [this page](https://docs.aws.amazon.com/iot/latest/develop
 - Building the image took 32 seconds in my case (in documentation 1.2.1 there is also a mispelling "greengrasss" with the extra 's')
 
 ## Nov 13 - Exploration with different programming codes
-- SDK repository [link](https://github.com/awsdocs/aws-doc-sdk-examples)
+- SDK repository [link](https://github.com/awsdocs/aws-doc-sdk-examples) which supports programming languages including Python, Java, C++, and .NET
+- The tutorial focuses on running Python SDK
 - 
