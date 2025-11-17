@@ -10,5 +10,7 @@ Following tutorial on [this page](https://docs.aws.amazon.com/iot/latest/develop
  
 # Nov 2 - Nov 12 Running Greengrass on Docker
 - Example code [here](https://github.com/aws-greengrass/aws-greengrass-docker#)
+- Cross-build necessary for aarch64 (linux/arm64), types of platforms supported listed [here](https://docs.docker.com/build/building/multi-platform/#building-multi-platform-images)
+- Building the image took 32 seconds in my case
 
 ## Nov 13 - Exploration with different programming codes
