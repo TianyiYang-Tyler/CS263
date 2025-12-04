@@ -1,0 +1,46 @@
+{
+    "name": "aws-iot-device-sdk-java-v2",
+    "packages": [
+        "maven"
+    ],
+    "build_steps": [
+        "mvn -B compile"
+    ],
+    "test_steps": [],
+    "imports": [
+        "JDK8"
+    ],
+    "env": {
+    },
+    "hosts": {
+        "ubuntu": {
+            "packages": [
+                "openjdk-8-jdk-headless"
+            ]
+        },
+        "debian": {
+            "packages": [
+                "openjdk-8-jdk-headless"
+            ]
+        },
+        "openwrt": {
+            "!packages": []
+        }
+    },
+    "targets": {
+        "linux": {
+            "architectures": {
+                "armv7": {
+                    "!packages": [
+                        "maven"
+                    ]
+                }
+            }
+        }
+    },
+    "variants" : {
+        "skip_test": {
+            "!test_steps": []
+        }
+      }
+}

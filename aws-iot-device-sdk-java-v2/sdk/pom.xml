@@ -1,0 +1,267 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>software.amazon.awssdk.iotdevicesdk</groupId>
+  <artifactId>aws-iot-device-sdk</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>${project.groupId}:${project.artifactId}</name>
+  <description>Java bindings for the AWS IoT Core Service</description>
+  <url>https://github.com/awslabs/aws-iot-device-sdk-java-v2</url>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>AWS SDK Common Runtime Team</name>
+      <email>aws-sdk-common-runtime@amazon.com</email>
+      <organization>Amazon Web Services</organization>
+      <organizationUrl>https://aws.amazon.com</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:git://github.com/awslabs/aws-iot-device-sdk-java-v2.git</connection>
+    <developerConnection>scm:git:ssh://github.com:awslabs/aws-iot-device-sdk-java-v2.git</developerConnection>
+    <url>http://github.com/awslabs/aws-iot-device-sdk-java-v2/tree/main</url>
+  </scm>
+
+  <properties>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <gradle.command>./gradlew</gradle.command>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>iot</artifactId>
+      <version>2.31.44</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>iotjobsdataplane</artifactId>
+      <version>2.31.44</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>sts</artifactId>
+      <version>2.31.44</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk.crt</groupId>
+      <artifactId>aws-crt</artifactId>
+      <version>0.40.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.30</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>5.8.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.8.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20231013</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.9.0</version>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.2.0</version>
+        <executions>
+          <execution>
+            <id>add-sources</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>greengrass/event-stream-rpc-model/src/main/java</source>
+                <source>greengrass/event-stream-rpc-client/src/main/java</source>
+                <source>greengrass/greengrass-client/src/event-stream-rpc-java/client</source>
+                <source>greengrass/greengrass-client/src/event-stream-rpc-java/model</source>
+              </sources>
+            </configuration>
+          </execution>
+          <execution>
+            <id>add-test-sources</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>greengrass/event-stream-rpc-model/src/test/java</source>
+                <source>greengrass/event-stream-rpc-client/src/test/java</source>
+                <!-- Include server sources as part of the test scope instead of including it in the main source.
+                     This prevents the server code from being distributed, but lets us test with it.
+                 -->
+                <source>greengrass/event-stream-rpc-server/src/main/java</source>
+                <source>greengrass/event-stream-rpc-server/src/test/java</source>
+                <source>greengrass/greengrass-client/src/test/java</source>
+                <!-- MQTT tests -->
+                <source>tests/mqtt</source>
+                <source>tests/mqtt5</source>
+                <source>tests/v2serviceclients</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.22.2</version>
+        <configuration>
+          <trimStackTrace>false</trimStackTrace>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.3.0</version>
+        <configuration>
+          <minmemory>128m</minmemory>
+          <maxmemory>8g</maxmemory>
+          <includeDependencySources>false</includeDependencySources>
+          <show>public</show>
+          <author>false</author>
+          <version>true</version>
+          <use>false</use>
+          <nottree>true</nottree>
+          <notimestamp>true</notimestamp>
+          <nodeprecatedlist>true</nodeprecatedlist>
+          <additionalJOptions>
+            <additionalJOption>--allow-script-in-comments</additionalJOption>
+          </additionalJOptions>
+          <windowtitle>AWS IoT Device SDK Java V2</windowtitle>
+          <encoding>UTF-8</encoding>
+          <docencoding>UTF-8</docencoding>
+          <doctitle>AWS IoT Device SDK Java V2 API Reference</doctitle>
+          <packagesheader>AWS IoT Device SDK Java V2</packagesheader>
+          <groups>
+            <group>
+              <title>IoT</title>
+              <packages>software.amazon.awssdk.iot*</packages>
+            </group>
+            <group>
+              <title>Greengrass</title>
+              <packages>software.amazon.awssdk.aws.greengrass*</packages>
+            </group>
+            <group>
+              <title>Event Stream RPC</title>
+              <packages>software.amazon.awssdk.eventstream*</packages>
+            </group>
+          </groups>
+          <header>AWS IoT Device SDK Java V2 API Reference</header>
+          <bottom>Copyright © 2021. All rights reserved.</bottom>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <!-- staging/release to Sonatype -->
+          <plugin>
+            <!-- staging/release to Sonatype Central -->
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>0.7.0</version>
+            <extensions>true</extensions>
+            <configuration>
+             <publishingServerId>central</publishingServerId>
+             <autoPublish>true</autoPublish>
+            </configuration>
+          </plugin>
+          <!-- source jar -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.2.1</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- javadoc jar -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>3.3.0</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- GPG signing -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>3.2.7</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <configuration>
+                  <keyname>${gpg.keyname}</keyname>
+                  <gpgArguments>
+                    <arg>--pinentry-mode</arg>
+                    <arg>loopback</arg>
+                  </gpgArguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

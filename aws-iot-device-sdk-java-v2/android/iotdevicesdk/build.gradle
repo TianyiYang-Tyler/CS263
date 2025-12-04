@@ -1,0 +1,211 @@
+import java.util.regex.Pattern
+
+apply plugin: 'com.android.library'
+apply plugin: 'signing' // Needed for OpenPGP signatures required to publish to Maven Central Repository
+
+Properties getGitTag() {
+    def gitTag = "git describe --tags".execute().text.trim()
+    def version = new Properties()
+    def versionPattern = Pattern.compile('v(\\d+).(\\d+).(\\d+)(-(.+))?')
+    def matcher = versionPattern.matcher(gitTag)
+    if (matcher.matches()) {
+        version['major'] = matcher.group(1)
+        version['minor'] = matcher.group(2)
+        version['patch'] = matcher.group(3)
+        try {
+            version['tag'] = matcher.group(5)
+        } catch (Exception ex) {}
+    }
+    return version
+}
+
+ext {
+    gitVersionName = {
+        def version = getGitTag()
+        def name = "${version['major']}.${version['minor']}.${version['patch']}"
+        return name
+    }
+    gitVersionCode = {
+        def version = getGitTag()
+        try {
+            def major = version['major'] as int
+            def minor = version['minor'] as int
+            def patch = version['patch'] as int
+            return (major * 1000) + (minor * 100) + patch
+        } catch (Exception ex) {
+            return 1000
+        }
+    }
+    gitVersionTag = {
+        def version = getGitTag()
+        return version['tag'] != '' ? '-' + version['tag'] : version['tag']
+    }
+}
+
+android {
+    namespace "software.amazon.awssdk.iotdevicesdk"   // REQUIRED on AGP 8+
+
+    compileSdkVersion 35
+
+    defaultConfig {
+        minSdkVersion 24
+        targetSdkVersion 33
+        versionCode = gitVersionCode()
+        versionName = gitVersionName()
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles 'consumer-rules.pro'
+
+        aarMetadata {
+        // Keeps from referencing newer resources/manifest attributes introduced after 30
+        minCompileSdk = 30
+        }
+    }
+
+    buildFeatures { 
+        // AGP 8 disables buildConfig generation by default. We set this to true
+        // to resstore BuildConfig.VERSION_NAME for both debug and release build types.
+        buildConfig true 
+    }
+
+    // Make the 'release' SoftwareComponent available for publishing on AGP 8
+    publishing {
+        singleVariant("release") { withSourcesJar() }
+    }
+
+    sourceSets {
+        main.java {
+            srcDirs = ['src/main/java',
+                       '../../sdk/src/main/java',
+                       '../../sdk/greengrass/event-stream-rpc-model/src/main/java',
+                       '../../sdk/greengrass/event-stream-rpc-client/src/main/java',
+                       '../../sdk/greengrass/event-stream-rpc-server/src/main/java',
+                       '../../sdk/greengrass/greengrass-client/src/event-stream-rpc-java/client',
+                       '../../sdk/greengrass/greengrass-client/src/event-stream-rpc-java/model'
+            ]
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField("String", "VERSION_NAME", "\"" + gitVersionName() + "\"")
+        }
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField("String", "VERSION_NAME", "\"" + gitVersionName() + "\"")
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+        // Enable desugaring so that Android lint doesn't flag `java.time` usage. Downstream
+        // consumers will need to enable desugaring to use this library.
+        // See: https://developer.android.com/studio/write/java8-support#library-desugaring
+        coreLibraryDesugaringEnabled true
+    }
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    api 'software.amazon.awssdk.crt:aws-crt-android:0.38.13'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
+    implementation 'org.slf4j:slf4j-api:1.7.30'
+    implementation 'com.google.code.gson:gson:2.9.0'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+}
+
+// Publishing
+apply plugin: 'maven-publish'
+
+// Sources
+task androidSourcesJar(type: Jar) {
+    archiveClassifier.set('sources')
+    from android.sourceSets.main.java.srcDirs
+}
+
+// Docs
+task androidDocs(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    android.libraryVariants.all { variant ->
+        if (variant.name == 'release') {
+            owner.classpath += variant.javaCompileProvider.get().classpath
+        }
+    }
+    exclude '**/R.html', '**/R.*.html', '**/index.html'
+}
+
+task androidDocsJar(type: Jar) {
+    archiveClassifier.set('javadoc')
+    from androidDocs.destinationDir
+}
+
+afterEvaluate {
+    publishing {
+        repositories {
+            maven {
+                def snapshotRepo = "https://central.sonatype.com/repository/maven-snapshots/"
+                def releaseRepo = "https://ossrh-staging-api.central.sonatype.com/"
+                url = version.endsWith('SNAPSHOT') ? snapshotRepo : releaseRepo
+            }
+            mavenLocal()
+        }
+
+        publications {
+            release(MavenPublication) {
+                def comp = components.findByName("release")
+                if (comp != null) {
+                    from comp
+                }
+
+                groupId = 'software.amazon.awssdk.iotdevicesdk'
+                artifactId = 'aws-iot-device-sdk-android'
+                version = project.hasProperty('newVersion') ? project.property('newVersion') : android.defaultConfig.versionName
+
+                pom {
+                    name.set("software.amazon.awssdk.iotdevicesdk:aws-iot-device-sdk-android")
+                    description.set("AWS IoT Device SDK Java Android")
+                    url.set("https://github.com/aws/aws-iot-device-sdk-java-v2")
+                    licenses {
+                        license {
+                            name.set("The Apache License, Version 2.0")
+                            url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                        }
+                    }
+                    developers {
+                        developer {
+                            id.set("iot-device-sdk-team")
+                            name.set("AWS IoT Device SDK Team")
+                            email.set("iot-device-sdk-team@amazon.com")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:git://github.com/aws/aws-iot-device-sdk-java-v2.git")
+                        developerConnection.set("scm:git:ssh://github.com/aws/aws-iot-device-sdk-java-v2.git")
+                        url.set("https://github.com/aws/aws-iot-device-sdk-java-v2")
+                    }
+                }
+            }
+        }
+
+        if (project.hasProperty("signingKey") && project.hasProperty("signingPassword")) {
+            signing {
+                useInMemoryPgpKeys(
+                    (String) project.property("signingKey"),
+                    (String) project.property("signingPassword")
+                )
+                println("key=" + project.property("signingKey"))
+                sign(publications)
+            }
+        }
+    }
+}
